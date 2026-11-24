@@ -1,83 +1,69 @@
-> **Durum (24.11.2026): KURULDU VE TEST EDİLDİ** — 1 CP + 3 worker, nginx LB dagilimi kanitlandi (3→1→3 scale, X-Pod-Name). Test sirasinda k3s'e gecildi; geri donus: `scripts/teardown-k3s.sh` (k3s repo) + bu repo'nun kurulum adimlari.
-# k8s-lab-vanilla — 1 CP + 3 Worker Vanilla Kubernetes Test Ortamı
+# k8s-lab-vanilla — 1 CP + N Worker Vanilla Kubernetes Lab
 
-Oracle Linux 8.10 VM'leri üzerinde, **kubeadm** ile kurulan; 1 control plane + 3 worker
-düzeninde, Calico CNI + MetalLB LoadBalancer + Rancher (GUI) içeren, tam geri alınabilir
-bir test ortamı.
+Oracle Linux 8.10 VM'leri üzerinde **kubeadm** ile kurulan; 1 control plane +
+1..N worker, Calico CNI, MetalLB (LoadBalancer), nginx LB/scale testi ve
+(ayrılabilir) Rancher GUI içeren, **tam geri alınabilir** test ortamı.
 
-Amaç: EKS'e benzer (aynı upstream sürüm) bir Kubernetes katmanında config, deployment
-ve scale senaryolarını bulut maliyeti olmadan test edebilmek.
+> **Durum (24.11.2026): KURULDU + TEST EDİLDİ (online VE offline).**
+> Online: 1CP+3W, nginx LB dağılım kanıtlı (docs/03).
+> Offline: imaj store'u sıfırlanmış VM'ler **yalnızca yerel cache'ten**
+> kurulu + aynı test `TEST_PASS` (docs/03, offline bölümü).
 
-## Mimari
+## Tek giriş noktası
 
-| VM | Ad | IP | Rol | Donanım |
-|---|---|---|---|---|
-| 1 | controller | 192.168.10.73 | Control Plane | 4 vCPU / 8 GiB / 40 GiB |
-| 2 | worker1 | 192.168.10.74 | Worker | 4 vCPU / 8 GiB / 40 GiB |
-| 3 | worker2 | 192.168.10.75 | Worker | 4 vCPU / 8 GiB / 40 GiB |
-| 4 | worker3 | 192.168.10.76 | Worker | 4 vCPU / 8 GiB / 40 GiB |
+```bash
+cd scripts
+MODE=online  ./k8s-lab-install.sh base  192.168.10.73 192.168.10.74 ...   # her VM
+MODE=online  ./k8s-lab-install.sh init  192.168.10.73                     # controller
+MODE=online  ./k8s-lab-install.sh join  192.168.10.73 192.168.10.74 ...    # 1..N worker
+MODE=online  ./k8s-lab-install.sh test  192.168.10.73                     # nginx+LB+scale+checklist
+MODE=online  ./k8s-lab-install.sh teardown <ip...>                        # geri alma
+```
 
-VM'ler KVM/libvirt (msi noteri) üzerinde UEFI/q35 ile çalışır; ağ 192.168.10.0/24
-(libvirt `default` network), statik DHCP lease'ler üzerinden sabitlenir.
+**Offline** (hedef ortamda internet yoksa) — `OFD` dizini her VM'de aynı yolda:
+```bash
+MODE=offline OFD=/root/offline ./k8s-lab-install.sh base <ip...>
+# OFD icerigi + uretim: ../offline/README.md
+```
+Her sub-komut adım adım echo yazar; başarısız adım non-zero exit verir.
+`1 CP + 1 worker` için `join`'a tek ip verilir; `1 CP + N worker` için N ip.
 
-## Sürümler (kurulum tarihi itibarıyla stabil)
+## Mimari (bu lab)
+
+| VM | IP | Rol |
+|---|---|---|
+| controller | 192.168.10.73 | Control Plane |
+| worker1-3 | 192.168.10.74-76 | Worker |
+
+4 vCPU / 8 GiB / 40 GiB, libvirt `default` ağı (192.168.10.0/24),
+MetalLB havuzu 192.168.10.80-84 (L2).
+
+## Sürümler (test edilmiş)
 
 | Bileşen | Sürüm |
 |---|---|
-| Kubernetes (kubeadm/kubelet/kubectl) | v1.37.2 |
-| Calico CNI | v3.33.1 |
+| Kubernetes | v1.37.2 |
+| containerd | 2.0.14 (CRI v1; OL8 deposunda yok → tarball) |
+| Calico | v3.33.1 |
 | MetalLB | v0.16.2 |
-| Rancher (GUI) | en yeni stable (cattle-system) |
-| OS | Oracle Linux 8.10 (SELinux disabled, firewalld off) |
+| nginx (test) | 1.25 |
 
 ## Dokümantasyon
 
 | # | Belge | İçerik |
 |---|---|---|
-| 0 | [docs/00-planimiz.md](docs/00-planimiz.md) | Plan, varsayımlar, kaynak hesabı |
-| 1 | [docs/01-vm-hazirligi.md](docs/01-vm-hazirligi.md) | VM'lerin libvirt üzerindeki durumu |
-| 2 | [docs/02-altyapi-kurulumu.md](docs/02-altyapi-kurulumu.md) | containerd + kubeadm paketleri, sysctl |
-| 3 | [docs/03-cluster-kurulumu.md](docs/03-cluster-kurulumu.md) | kubeadm init / join |
-| 4 | [docs/04-cni-metallb.md](docs/04-cni-metallb.md) | Calico + MetalLB pool |
-| 5 | [docs/05-test-senaryosu.md](docs/05-test-senaryosu.md) | nginx deploy, scale 3→1, trafik doğrulama |
-| 6 | [docs/06-rancher-gui.md](docs/06-rancher-gui.md) | Rancher kurulumu ve kullanımı |
-| 7 | [docs/07-geri-alma.md](docs/07-geri-alma.md) | **Rollback:** cluster'ı sıfırlama, VM'leri tekrar kullanılabilir hâle getirme |
+| 00 | [docs/00-planimiz.md](docs/00-planimiz.md) | Plan, varsayımlar |
+| 01 | [docs/01-gereksinimler.md](docs/01-gereksinimler.md) | Donanım/OS/swap/cgroup/internet |
+| 02 | [docs/02-adim-adim-kurulum.md](docs/02-adim-adim-kurulum.md) | Script çıktılarının elle karşılığı |
+| 03 | [docs/03-test-senaryosu.md](docs/03-test-senaryosu.md) | nginx+LB+scale; **ölçülmüş online+offline sonuçlar** |
+| 04 | [docs/04-checklist.md](docs/04-checklist.md) | Paket/node/LB/trafik kontrol case'leri |
+| 05 | [docs/05-rancher-gui.md](docs/05-rancher-gui.md) | Rancher GUI (metakümese) |
+| 06 | [docs/06-geri-alma.md](docs/06-geri-alma.md) | Teardown, tek VM çıkarma, sıfırlama |
 
-## Hızlı Başlangıç (kısaltılmış)
-
-```bash
-# 1) Tüm 4 VM'de altyapı (docs/02):
-for ip in 73 74 75 76; do
-  ssh root@192.168.10.$ip 'cat > /root/k8s-base.sh' < scripts/k8s-base.sh
-  ssh root@192.168.10.$ip 'bash /root/k8s-base.sh'   # 1. çalıştırmada cgroup v2 için reboot yapar
-done
-# 2) Control plane + Calico (docs/03, 04):
-ssh root@192.168.10.73 'cat > /root/cluster-init.sh' < scripts/cluster-init.sh
-ssh root@192.168.10.73 'bash /root/cluster-init.sh'
-# 3) Worker'ları kat (docs/03):
-for ip in 74 75 76; do
-  ssh root@192.168.10.$ip 'cat > /root/cluster-join.sh' < scripts/cluster-join.sh
-  ssh root@192.168.10.$ip 'bash /root/cluster-join.sh'
-done
-# 4) MetalLB + test işyükü (docs/04, 05):
-ssh root@192.168.10.73 'kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.16.2/config/manifests/metallb-native.yaml'
-ssh root@192.168.10.73 'cat > /root/metallb.yaml' < scripts/metallb.yaml
-ssh root@192.168.10.73 'kubectl apply -f /root/metallb.yaml'
-ssh root@192.168.10.73 'cat > /root/nginx-deploy.yaml' < scripts/nginx-deploy.yaml
-ssh root@192.168.10.73 'kubectl apply -f /root/nginx-deploy.yaml'
-# 5) Scale testi (docs/05) ve GUI (docs/06):
-bash scripts/test-nginx.sh
-bash scripts/rancher-install.sh
-```
-
-## Test Senaryosu (her kurulumdan sonra zorunlu)
-
-nginx Deployment 3 replika ile ayağa kaldırılır; LoadBalancer servisi üzerinden
-isteklerin **tüm pod'lara dağıldığı** gözlenir. Ardından 1 replikaya scale down
-edilir, trafik yine kesintisiz akar. Detay: [docs/05-test-senaryosu.md](docs/05-test-senaryosu.md).
-
-## Sıfırlama / Yineleme
-
-Aynı 4 VM üzerinde bu ortamı tekrar sıfırdan kurmak için tek komut:
-`bash scripts/teardown.sh` (docs/07). VM'lerin diski silinmez; yalnızca
-k8s bileşenleri kaldırılır.
+## Dersler (kurulumda yaşandı, script'e işlendi)
+- swap → fstab'da KALICI yorumlanmazsa reboot'ta geri açılır, kubelet crash-loop
+- containerd 1.7 → CRI v1 yok; 2.0.14 tarball + `/usr/local/bin` + unit override
+- `containerd config default` v3 yazar → `version = 2` yapılmalı
+- join token: `kubeadm token create --print-join-command` (manuel hash çalışmaz)
+- MetalLB: controller `available` olmadan pool apply'si webhook'ta düşer → bekle+retry
+- tek node CP'de MetalLB/Rancher pod'ları control-plane taint'e takılır → toleration

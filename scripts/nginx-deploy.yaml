@@ -1,0 +1,68 @@
+# nginx test işyükü — her pod kendi IP'sini X-Pod header'ında döndürür
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nginx-lab
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+  namespace: nginx-lab
+data:
+  default.conf: |
+    server {
+      listen 80;
+      add_header X-Pod $server_addr always;
+      location / {
+        return 200 "ok\n";
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: nginx-lab
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:1.27
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: conf
+              mountPath: /etc/nginx/conf.d
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: conf
+          configMap:
+            name: nginx-conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-lb
+  namespace: nginx-lab
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+    - port: 80
+      targetPort: 80

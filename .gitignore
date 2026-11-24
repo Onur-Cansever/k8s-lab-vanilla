@@ -1,0 +1,6 @@
+*.log
+*.swp
+.kube/
+kubeconfig
+*.kubeconfig
+.DS_Store

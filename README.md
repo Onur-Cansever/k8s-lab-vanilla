@@ -1,3 +1,4 @@
+> **Durum (24.11.2026): KURULDU VE TEST EDİLDİ** — 1 CP + 3 worker, nginx LB dagilimi kanitlandi (3→1→3 scale, X-Pod-Name). Test sirasinda k3s'e gecildi; geri donus: `scripts/teardown-k3s.sh` (k3s repo) + bu repo'nun kurulum adimlari.
 # k8s-lab-vanilla — 1 CP + 3 Worker Vanilla Kubernetes Test Ortamı
 
 Oracle Linux 8.10 VM'leri üzerinde, **kubeadm** ile kurulan; 1 control plane + 3 worker

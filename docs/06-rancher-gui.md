@@ -56,3 +56,14 @@ curl -sk https://<Rancher-LB-IP>/healthz   # {"status":"Pinged"}
 kubectl -n cattle-system delete svc rancher
 helm uninstall rancher -n cattle-system
 ```
+
+## Mimari Not: Rancher Nerede Calisir?
+
+Rancher, yoneticegi cluster'in **DISINDA** bir "meta-cluster"da calisir.
+Bu laboratuvarda: **k8sdig VM (192.168.10.77)** = meta-cluster (tek-node k8s).
+
+- `scripts/rancher-install.sh` k8sdig'de calisir (Helm, self-signed TLS, bootstrap parolasini /root/rancher-pw.txt'e yazar)
+- Her cluster (vanilla/k3s) import edilir: cluster tarafinda
+  `KUBECONFIG=... kubectl create -f "https://releases.rancher.com/import/import.yaml?name=<cluster>"`
+- UI: `https://192.168.10.77` (bootstrap parolasiyla giris)
+- Rancher CE = Apache-2.0, ucretsiz, sınırsız cluster/node

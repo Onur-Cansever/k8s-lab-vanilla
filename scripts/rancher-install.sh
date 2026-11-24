@@ -1,39 +1,41 @@
 #!/bin/bash
-# rancher-install.sh — orion'dan çalıştır (controller üzerinden)
-set -uo pipefail
-CP=root@192.168.10.73
-K() { ssh -o BatchMode=yes "$CP" "kubectl $*"; }
-
-K get ns cattle-system >/dev/null 2>&1 || K create ns cattle-system
-K -n cattle-system get deploy rancher >/dev/null 2>&1 && { echo "Rancher zaten kurulu"; exit 0; }
-
-K apply -f - <<'EOF'
-apiVersion: v1
-kind: Service
-metadata:
-  name: rancher
-  namespace: cattle-system
-  labels:
-    app: rancher
-spec:
-  type: LoadBalancer
-  selector:
-    app: rancher
-  ports:
-    - port: 80
-      targetPort: 80
-    - port: 443
-      targetPort: 443
-EOF
-
-K create secret generic ingress-internal-tls --namespace cattle-system \
-  --from-file=tls.crt=/dev/null 2>/dev/null || true
-
-ssh -o BatchMode=yes "$CP" "helm repo add rancher-stable https://releases.rancher.com/chart || true; helm repo update"
-ssh -o BatchMode=yes "$CP" "helm upgrade --install rancher rancher-stable/rancher -n cattle-system --set replicas=1 --timeout 20m"
-K -n cattle-system rollout status deploy/ranchar 2>/dev/null || K -n cattle-system rollout status deploy/rancher
-LB=$(K -n cattle-system get svc rancher -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-PW=$(K -n cattle-system get secret bootstrap-password -o jsonpath='{.data.password}' | base64 -d)
-echo "RANCHER_URL=http://$LB/"
-echo "BOOTSTRAP_PASSWORD=$PW"
+# rancher-install.sh — Rancher meta-cluster kurulumu
+# MIMARI: Rancher, yonetecegi cluster'in DISINDA calismalidir.
+# Laboratuvarda: k8sdig VM (192.168.10.77, tek-node k8s) = meta-cluster.
+# Kullanim: ssh root@192.168.10.77 'bash /root/rancher-install.sh'
+set -euo pipefail
+kubectl get nodes 2>/dev/null | grep -q Ready || { echo "K8S_NOT_READY"; exit 1; }
+# helm
+if ! command -v helm >/dev/null; then
+  curl -fsSL -o /tmp/helm.tgz https://get.helm.sh/helm-v3.15.4-linux-amd64.tar.gz
+  tar -xzf /tmp/helm.tgz -C /tmp && install -m755 /tmp/linux-amd64/helm /usr/local/bin/helm
+fi
+# bootstrap RBAC (agent import icin; helm install once gereksiz)
+kubectl create namespace cattle-system 2>/dev/null || true
+# not: rbac.rancher.io domain'i mevcut degil; bootstrap RBAC import adiminda
+#     https://www.rancher.io/docs/... icindeki manifest ile kurulur
+# self-signed TLS (lab: IP ile)
+cd /tmp
+if [ ! -s tls.crt ]; then
+  openssl req -x509 -nodes -days 3650 -newkey rsa:2048 -keyout tls.key -out tls.crt \
+    -subj "/CN=192.168.10.77" -addext "subjectAltName=IP:192.168.10.77,DNS:192.168.10.77"
+fi
+kubectl -n cattle-system create secret tls rancher-tls --cert=tls.crt --key=tls.key \
+  --dry-run=client -o yaml | kubectl apply -f - 2>&1 | head -1
+# helm install
+helm repo add rancher-latest https://releases.rancher.com/server-charts/latest 2>&1 | tail -1 || helm repo update
+helm repo update >/dev/null 2>&1
+PW=$(tr -dc A-Za-z0-9 </dev/urandom | head -c 24)
+echo "BOOTSTRAP_PW=$PW" > /root/rancher-pw.txt; chmod 600 /root/rancher-pw.txt
+CRTB=$(base64 -w0 tls.crt); KEYB=$(base64 -w0 tls.key)
+helm install rancher rancher-latest/rancher -n cattle-system \
+  --set hostname=192.168.10.77 \
+  --set ingress.tls.source=secret \
+  --set privateCA=true \
+  --set "ingress.tls.certificate=$CRTB" \
+  --set "ingress.tls.certificateKey=$KEYB" \
+  --set bootstrapPassword=$PW \
+  --wait --timeout 9m 2>&1 | tail -4
+kubectl -n cattle-system get pods 2>/dev/null | head -6
+curl -sk -o /dev/null -w "UI_HTTPS=%{http_code}\n" https://192.168.10.77/
 echo RANCHER_DONE

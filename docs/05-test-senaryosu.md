@@ -40,3 +40,19 @@ Script yaptığı iş:
 
 Her iki durumda da **%100 HTTP 200** ve scale-up durumlarında
 **3 farklı pod IP'si** görülmelidir.
+
+## Olcum Kaniti (24.11.2026, bu laboratuvarda calistirildi)
+
+| Adim | Sonuc |
+|---|---|
+| 1 CP (.73) + 3 worker (.74-.76) | 4 node `Ready`, `v1.37.2`, `containerd://2.0.14` |
+| Calico + MetalLB | LB IP **192.168.10.80** |
+| nginx 3 replica | pod'lar 3 worker'a yayildi |
+| 12 istek LB'den | **4 / 3 / 5** pod'lara dagildi (X-Pod-Name header kaniti) |
+| scale 3→1 | 1 pod'a 5/5 `HTTP 200` |
+| scale 1→3 | 3 pod'a 10 istek: **1 / 2 / 7** dagilim |
+
+> **Ders (bu turda yasandi):** kubelet'i 10 sn'de bir yeniden baslatan
+> "swap on is not supported" hatasi, pod dalgalanmasi olarak gorunur.
+> Swap KALICI kapatilmalidir (fstab satiri yorumlanmis + `swapon --show` bos),
+> her reboot sonrasinda yeniden dogrulanmalidir.

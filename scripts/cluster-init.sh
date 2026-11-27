@@ -22,7 +22,9 @@ echo "CILIUM APLANIYOR (kube-proxy replacement)..."
 helm repo add cilium https://helm.cilium.io/ >/dev/null 2>&1 || true
 helm install cilium cilium/cilium --version 1.20.5 -n kube-system \
   --set kubeProxyReplacement=true --set k8sServiceHost=192.168.10.73 --set k8sServicePort=6443 \
+  --set cluster.ipam.cidr=192.168.0.0/16 \
   --wait --timeout 10m
+# Tek node clusterde: --set operator.replicas=1 ekle (chart default 2; 2. replica host-port capismasindan Pending kalir)
 for i in $(seq 1 30); do
   kubectl get nodes | grep -q Ready && kubectl -n kube-system get pods | grep -q "cilium.*Running" && break
   sleep 10

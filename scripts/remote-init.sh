@@ -27,11 +27,13 @@ mkdir -p /root/.kube; cp /etc/kubernetes/admin.conf /root/.kube/config
 echo "[4/5] Cilium CNI (kube-proxy replacement)"
 if [ "$KMODE" = "offline" ]; then
   helm install cilium "$KOFD/vanilla/cilium-1.20.5.tgz" -n kube-system \
-    --set kubeProxyReplacement=true --set k8sServiceHost=$CP_IP --set k8sServicePort=6443 --wait --timeout 10m
+    --set kubeProxyReplacement=true --set k8sServiceHost=$CP_IP --set k8sServicePort=6443 \
+    --set cluster.ipam.cidr=192.168.0.0/16 --wait --timeout 10m
 else
   helm repo add cilium https://helm.cilium.io/ >/dev/null 2>&1 || true
   helm install cilium cilium/cilium --version 1.20.5 -n kube-system \
-    --set kubeProxyReplacement=true --set k8sServiceHost=$CP_IP --set k8sServicePort=6443 --wait --timeout 10m
+    --set kubeProxyReplacement=true --set k8sServiceHost=$CP_IP --set k8sServicePort=6443 \
+    --set cluster.ipam.cidr=192.168.0.0/16 --wait --timeout 10m
 fi
 for i in $(seq 1 24); do kubectl -n kube-system get pods 2>/dev/null | grep -q "cilium" && kubectl get nodes 2>/dev/null | grep -q Ready && break; sleep 10; done
 

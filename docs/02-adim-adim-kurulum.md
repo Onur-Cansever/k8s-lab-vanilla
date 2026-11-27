@@ -109,8 +109,10 @@ kubeadm init --apiserver-cert-extra-sans=<cp_ip> --pod-network-cidr=192.168.0.0/
   --cri-socket=unix:///run/containerd/containerd.sock --skip-phases=addon/kube-proxy
 mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config
 helm install cilium cilium/cilium --version 1.20.5 -n kube-system \
-  --set kubeProxyReplacement=true --set k8sServiceHost=<cp_ip> --set k8sServicePort=6443
+  --set kubeProxyReplacement=true --set k8sServiceHost=<cp_ip> --set k8sServicePort=6443 \
+  --set cluster.ipam.cidr=192.168.0.0/16
 # offline: helm install cilium <OFD>/vanilla/cilium-1.20.5.tgz (ayni --set'ler)
+# Tek node clusterde: --set operator.replicas=1 ekle (chart default 2; host-port capismasi)
 # KPR dogrulamasi:
 kubectl -n kube-system exec ds/cilium -- cilium-dbg status | grep KubeProxyReplacement
 iptables-save | grep KUBE-SVC   # bos

@@ -15,7 +15,7 @@ kubeadm init --apiserver-cert-extra-sans=192.168.10.77 --pod-network-cidr=192.16
 mkdir -p /root/.kube; cp /etc/kubernetes/admin.conf /root/.kube/config
 helm repo add cilium https://helm.cilium.io/ >/dev/null 2>&1 || true
 helm install cilium cilium/cilium --version 1.20.5 -n kube-system \
-  --set kubeProxyReplacement=true --set k8sServiceHost=192.168.10.77 --set k8sServicePort=6443 --wait --timeout 10m >/dev/null 2>&1
+  --set kubeProxyReplacement=true --set k8sServiceHost=192.168.10.77 --set k8sServicePort=6443 --set cluster.ipam.cidr=192.168.0.0/16 --wait --timeout 10m >/dev/null 2>&1
 kubectl taint nodes k8sdig node-role.kubernetes.io/control-plane- 2>/dev/null
 for i in $(seq 1 12); do kubectl get nodes 2>/dev/null | grep -q Ready && break; sleep 10; done
 echo "=== [3/6] ingress-nginx (admission webhook kapali)"

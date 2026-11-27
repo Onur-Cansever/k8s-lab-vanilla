@@ -20,6 +20,10 @@ ancak **boot argümanı** ve **donanım** kalemlerini elle doğrulayın.
 - SELinux: `enforcing` kalsa bile çalışır; lab'da `disabled`
 - firewalld: kapalı (veya lab trafiğine açık)
 
+## Cluster Yönetim Kullanıcısı
+- `kuber` (non-root) — cluster'ın sahibi: `/etc/kubernetes`, `/var/lib/kubelet`, `/var/lib/etcd` + kubeconfig kuber'a ait (`chown -R kuber:kuber`); day-2 operasyon (kubectl/helm) kuber ile
+- `kubeadm` adımları sudoers NOPASSWD ile kuber tarafından yürütülür; bileşenler (kubelet/containerd/cilium) systemd ile root çalışır
+
 ## Boot / Çekirdek (elle doğrula)
 ```bash
 # cgroup v2 aktif mi?  (k8s 1.34+ gerektirir)

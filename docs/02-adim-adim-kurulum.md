@@ -116,6 +116,12 @@ helm install cilium cilium/cilium --version 1.20.5 -n kube-system \
 # KPR dogrulamasi:
 kubectl -n kube-system exec ds/cilium -- cilium-dbg status | grep KubeProxyReplacement
 iptables-save | grep KUBE-SVC   # bos
+# TEK NODE CLUSTER (worker yoksa): CP taint'ini KALDIR — kubeadm CP node'a
+# node-role.kubernetes.io/control-plane:NoSchedule koyar; taint varken
+# nginx gibi user workload'lar bu node'a konumlanamaz (surekli Pending).
+# Multi-node lab'da taint KALIR (yukaridaki toleration yolu sadece system
+# pod'lari icindir); taint kalkir kalkmaz node tum role'larla schedulable olur.
+kubectl taint nodes --all node-role.kubernetes.io/control-plane-   # YALNIZ TEK NODE
 kubectl apply -f <metallb-native.yaml>    # offline: OFD/vanilla/metallb-native.yaml
 # MetalLB controller'IN available olmasını BEKLE (ayrıksa webhook yarışır):
 kubectl -n metallb-system rollout status deploy/controller

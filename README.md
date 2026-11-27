@@ -67,3 +67,9 @@ MetalLB havuzu 192.168.10.80-84 (L2).
 - join token: `kubeadm token create --print-join-command` (manuel hash çalışmaz)
 - MetalLB: controller `available` olmadan pool apply'si webhook'ta düşer → bekle+retry
 - tek node CP'de MetalLB/Rancher pod'ları control-plane taint'e takılır → toleration
+- (27.11) **Tek node = CP + worker:** nginx gibi user workload'lar CP node'a kubeadm'in `control-plane:NoSchedule` taint'i yüzünden konumlanamaz → taint'i KALDIR (`kubectl taint nodes --all node-role.kubernetes.io/control-plane-`); multi-node'da taint kalır, yalnız sistem pod'ları toleration alır
+- (27.11) **containerd CRI CNI cache tek seferlik:** `/opt/cni/bin` boşken başlayan containerd (örn. wipe sonrası) "cni plugin not initialized" durumunu cache'leyip retry ETMEZ → node Cilium sağlıklı da olsa NotReady kalır; CNI kuruluken `systemctl restart containerd`
+- (27.11) **Cilium chart `operator.replicas` default 2** → tek node'da 2. operator host-port çakışmasından Pending kalır; tek node: `--set operator.replicas=1` (anahtar `operator.*`, `ciliumOperator.*` değil — yanlış anahtar sessizce geçersiz)
+- (27.11) **Cilium default IPAM havuzu 10.0.0.0/8** → podlar kubeadm `--pod-network-cidr`'a bakmadan 10.0.x alır; hizalamak için KURULUMDA `--set cluster.ipam.cidr=192.168.0.0/16` (mevcut node'da havuz yapışkan — sonra vermenin anlamı yok)
+- (27.11) **kubeadm reset sonrası KUBE-SVC iptables kuralları kalabilir** (kube-proxy graceful durdurulmazsa) → adanmış VM'de `iptables -t nat -F` ile temizle, yoksa eski ClusterIP hash'leri yeni cluster'ın NodePort'larını karıştırmaz ama gürültü + sürpriz
+- (27.11) **Cluster admin: `kuber` (non-root) user** — `/etc/kubernetes` + kubeconfig kuber'a ait (`chown -R kuber:kuber`), kubeadm sudoers NOPASSWD ile kuber tarafından yürütülür; bileşenler systemd ile root çalışır (tam rootless/userns 1.37'de Beta, resmî kubeadm akışı yok — kullanılmaz)

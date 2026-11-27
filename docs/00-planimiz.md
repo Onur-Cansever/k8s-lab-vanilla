@@ -22,7 +22,7 @@ yerelde doğrulayabilmek.
 |---|---|
 | 1 CP + 3 worker | 3 worker VM hazır; CP ayrı 4. VM'de → worker kaynakları boşuna CP'ye gitmesin |
 | HA yapılmadı | Test ortamı; tek CP kabul edilebilir SPOF. Gerekirse 2-3 küçük CP VM'i ile HA'ya geçilir (kubeadm upgrade/init join --control-plane) |
-| Calico (overlay) | AWS VPC CNI ENI gerektirir, yerelde çalışmaz; Calico tüm düğümlerde aynı davranır |
+| Cilium (kube-proxy replacement) | Standart: CNI + servis proxy tek bileşende; kube-proxy hiç kurulmaz (kubeadm `--skip-phases=addon/kube-proxy`), eBPF ile ClusterIP/NodePort/LB |
 | MetalLB | EKS'teki LoadBalancer servislerinin yerel karşılığı; 192.168.10.80-84 pool |
 | Rancher (GUI) | Ücretsiz (Apache-2.0), sektörde standart; aynı GUI k3s ve EKS-A kümeleriyle de kullanılır |
 | local-path PV (varsa) | EBS CSI'nin yerel karşılığı (test senaryosu PV gerektirmez, opsiyonel) |

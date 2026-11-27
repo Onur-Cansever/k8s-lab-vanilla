@@ -91,7 +91,7 @@ Aynı VM'ler; önce teardown + **imaj store'u tamamen silindi**
 
 ```
 base:  4/4 VM  (offline: /root/offline/vanilla/rpms/ + containerd tarball)
-init:  imaj import 13/13 → kubeadm init v1.37.2 → Calico → MetalLB (pool deneme=1)
+init:  imaj import 13/13 → kubeadm init v1.37.2 → CNI → MetalLB (pool deneme=1)
 join:  3 worker (imaj import + kubeadm join)
 test:
   LB IP: 192.168.10.80

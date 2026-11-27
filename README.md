@@ -1,7 +1,7 @@
 # k8s-lab-vanilla — 1 CP + N Worker Vanilla Kubernetes Lab
 
 Oracle Linux 8.10 VM'leri üzerinde **kubeadm** ile kurulan; 1 control plane +
-1..N worker, Calico CNI, MetalLB (LoadBalancer), nginx LB/scale testi ve
+1..N worker, Cilium CNI (kube-proxy replacement), MetalLB (LoadBalancer), nginx LB/scale testi ve
 (ayrılabilir) Rancher GUI içeren, **tam geri alınabilir** test ortamı.
 
 > **Durum (24.11.2026): KURULDU + TEST EDİLDİ (online VE offline).**
@@ -44,7 +44,7 @@ MetalLB havuzu 192.168.10.80-84 (L2).
 |---|---|
 | Kubernetes | v1.37.2 |
 | containerd | 2.0.14 (CRI v1; OL8 deposunda yok → tarball) |
-| Calico | v3.33.1 |
+| Cilium | v1.20.5 (kube-proxy replacement) |
 | MetalLB | v0.16.2 |
 | nginx (test) | 1.25 |
 

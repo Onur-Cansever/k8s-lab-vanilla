@@ -52,7 +52,7 @@ swapon --show | wc -l            # beklenen: 0
 |---|---|
 | Kubernetes | v1.37.2 |
 | containerd | 2.0.14 (CRI v1) |
-| Calico | v3.33.1 |
+| Cilium | v1.20.5 (kube-proxy replacement) |
 | MetalLB | v0.16.2 |
 | nginx (test iş yükü) | 1.25 |
 

@@ -24,8 +24,10 @@ Controller VM'de (kubeconfig ayarlı) çalıştırın.
 ```bash
 [ ] kubectl get nodes                     # Tümü Ready (1 CP + N worker)
 [ ] kubectl get nodes --no-headers | grep -c Ready   # = toplam node
-[ ] kubectl get pods -A                   # kube-system: coredns/kube-proxy OK
-[ ] kubectl -n kube-system get ds calico-node   # DESIRED=CURRENT=READY
+[ ] kubectl get pods -A                   # kube-system: coredns/cilium OK
+[ ] kubectl -n kube-system get ds cilium         # DESIRED=CURRENT=READY
+[ ] kubectl -n kube-system get ds kube-proxy  # YOK (kube-proxy replacement)
+[ ] iptables-save | grep KUBE-SVC            # bos (eBPF frontend'ler cilium-dbg service list'te)
 [ ] kubectl -n metallb-system get deploy controller   # AVAILABLE=1
 [ ] kubectl get ipaddresspool -n metallb-system      # lab-pool var
 ```

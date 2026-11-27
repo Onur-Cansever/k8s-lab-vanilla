@@ -10,10 +10,12 @@ for t in $(ctr -n k8s.io tasks ls -q 2>/dev/null); do ctr -n k8s.io tasks kill -
 sleep 2
 for c in $(ctr -n k8s.io containers ls -q 2>/dev/null); do ctr -n k8s.io containers rm "$c" 2>/dev/null; done
 rm -rf /etc/kubernetes /var/lib/etcd /var/lib/kubelet /root/.kube /var/log/pods
-echo "=== [2/6] kubeadm init (1.36) + calico"
-kubeadm init --apiserver-cert-extra-sans=192.168.10.77 --pod-network-cidr=192.168.0.0/16 --cri-socket=unix:///run/containerd/containerd.sock > /tmp/init.log 2>&1 || { echo "INIT HATA:"; grep -E "ERROR|error" /tmp/init.log | head -5; exit 1; }
+echo "=== [2/6] kubeadm init (1.36, kube-proxy atla) + cilium (kube-proxy replacement)"
+kubeadm init --apiserver-cert-extra-sans=192.168.10.77 --pod-network-cidr=192.168.0.0/16 --cri-socket=unix:///run/containerd/containerd.sock --skip-phases=addon/kube-proxy > /tmp/init.log 2>&1 || { echo "INIT HATA:"; grep -E "ERROR|error" /tmp/init.log | head -5; exit 1; }
 mkdir -p /root/.kube; cp /etc/kubernetes/admin.conf /root/.kube/config
-kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.33.1/manifests/calico.yaml >/dev/null 2>&1
+helm repo add cilium https://helm.cilium.io/ >/dev/null 2>&1 || true
+helm install cilium cilium/cilium --version 1.20.5 -n kube-system \
+  --set kubeProxyReplacement=true --set k8sServiceHost=192.168.10.77 --set k8sServicePort=6443 --wait --timeout 10m >/dev/null 2>&1
 kubectl taint nodes k8sdig node-role.kubernetes.io/control-plane- 2>/dev/null
 for i in $(seq 1 12); do kubectl get nodes 2>/dev/null | grep -q Ready && break; sleep 10; done
 echo "=== [3/6] ingress-nginx (admission webhook kapali)"

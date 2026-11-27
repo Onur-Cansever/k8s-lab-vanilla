@@ -59,6 +59,12 @@ REPO
 fi
 kubeadm version -o short | grep -q "v1.37" || { echo "  HATA: kubeadm 1.37 degil"; exit 1; }
 echo "  $(kubeadm version -o short)"
+# helm (Cilium kurulumu icin)
+if ! command -v helm >/dev/null; then
+  curl -fsSL -o /tmp/helm.tgz https://get.helm.sh/helm-v3.16.4-linux-amd64.tar.gz
+  tar -xzf /tmp/helm.tgz -C /tmp && install -m755 /tmp/linux-amd64/helm /usr/local/bin/helm
+fi
+echo "  helm $(helm version --short)"
 
 echo "[5/6] sysctl + moduller"
 modprobe br_netfilter; modprobe overlay

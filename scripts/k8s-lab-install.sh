@@ -1,6 +1,6 @@
 #!/bin/bash
 # k8s-lab-install.sh — Vanilla Kubernetes laboratuvar kurulumu (1 CP + 1..N worker)
-# OL8.10, k8s 1.37.2, containerd 2.0.14, Calico, MetalLB
+# OL8.10, k8s 1.37.2, containerd 2.0.14, Cilium (kube-proxy replacement), MetalLB
 #
 # KULLANIM (driver makine, orion gibi — VM'lere ssh yetkili):
 #   MODE=online  ./k8s-lab-install.sh base     192.168.10.73 192.168.10.74 ...
@@ -11,7 +11,7 @@
 #
 # OFFLINE (OFD dizini her VM'de ayni yolda olmalidir; hedef ortamda internet YOK):
 #   MODE=offline OFD=/root/offline ./k8s-lab-install.sh base <ip...>
-#   OFD icinde: vanilla/{rpms/, images/, calico.yaml, metallb-native.yaml, containerd-2.0.14-linux-amd64.tar.gz}
+#   OFD icinde: vanilla/{rpms/, images/, cilium-1.20.5.tgz, metallb-native.yaml, containerd-2.0.14-linux-amd64.tar.gz}
 #
 # Senaryolar: 1 CP + 1 worker → base+init+join(1 ip)+test ; 1 CP + N worker → join'e N ip
 # Her adim echo ile yazilir; basarisiz adim non-zero exit verir.

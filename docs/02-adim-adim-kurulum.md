@@ -96,7 +96,7 @@ Başarılı bitiş: `BASE_DONE <hostname>`; `swapon --show` boş,
 [1/5] eski state temizle
 [2/5] imajlari hazirla            (offline: OFD/vanilla/images/*.tar import)
 [3/5] kubeadm init (pod-cidr 192.168.0.0/16, san: <cp_ip>)
-[4/5] Calico CNI
+[4/5] Cilium CNI (kube-proxy replacement)
 [5/5] MetalLB (controller ayakta beklenir, sonra pool)
   pool OK (deneme=1)
 NAME    STATUS   ROLES           VERSION
@@ -106,9 +106,14 @@ INIT_DONE <cp_ip>
 Elle:
 ```bash
 kubeadm init --apiserver-cert-extra-sans=<cp_ip> --pod-network-cidr=192.168.0.0/16 \
-  --cri-socket=unix:///run/containerd/containerd.sock
+  --cri-socket=unix:///run/containerd/containerd.sock --skip-phases=addon/kube-proxy
 mkdir -p /root/.kube && cp /etc/kubernetes/admin.conf /root/.kube/config
-kubectl apply -f <calico.yaml>            # offline: OFD/vanilla/calico.yaml
+helm install cilium cilium/cilium --version 1.20.5 -n kube-system \
+  --set kubeProxyReplacement=true --set k8sServiceHost=<cp_ip> --set k8sServicePort=6443
+# offline: helm install cilium <OFD>/vanilla/cilium-1.20.5.tgz (ayni --set'ler)
+# KPR dogrulamasi:
+kubectl -n kube-system exec ds/cilium -- cilium-dbg status | grep KubeProxyReplacement
+iptables-save | grep KUBE-SVC   # bos
 kubectl apply -f <metallb-native.yaml>    # offline: OFD/vanilla/metallb-native.yaml
 # MetalLB controller'IN available olmasını BEKLE (ayrıksa webhook yarışır):
 kubectl -n metallb-system rollout status deploy/controller

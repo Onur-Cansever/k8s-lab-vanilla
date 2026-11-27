@@ -14,8 +14,8 @@ echo "[2/5] Test işyükü + MetalLB..."
 K delete ns nginx-lab --ignore-not-found --timeout=120s || true
 K delete ns metallb-system --ignore-not-found --timeout=120s || true
 
-echo "[3/5] Calico..."
-K delete -f https://raw.githubusercontent.com/projectcalico/calico/v3.33.1/manifests/calico.yaml --ignore-not-found 2>/dev/null || true
+echo "[3/5] Cilium (kube-proxy replacement)..."
+ssh -o BatchMode=yes "$CP" "helm uninstall cilium -n kube-system" 2>/dev/null || true
 
 echo "[4/5] kubeadm reset (4 VM)..."
 for h in $CP $WORKERS; do

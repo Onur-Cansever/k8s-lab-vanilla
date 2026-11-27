@@ -17,7 +17,7 @@ lab (192.168.10.73)  ── Fleet/kubeconfig ──>  Rancher (k8sdig)
 
 ## Kurulum (k8sdig, test edilmiş adımlar)
 ```bash
-# metaküme: kubeadm init 1.35 + calico + ingress-nginx (hostNetwork)
+# metaküme: kubeadm init 1.35 + cilium (kube-proxy replacement) + ingress-nginx (hostNetwork)
 helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
 kubectl create namespace cattle-system
 PW=$(tr -dc A-Za-z0-9 </dev/urandom | head -c24)   # bootstrap parolası
